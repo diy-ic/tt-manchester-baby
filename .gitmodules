@@ -1,0 +1,3 @@
+[submodule "src/openlane-manchester-baby"]
+	path = src/openlane-manchester-baby
+	url = https://github.com/diy-ic/openlane-manchester-baby
