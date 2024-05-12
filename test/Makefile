@@ -11,6 +11,7 @@ BABY_SRC_RTL_DIR = /openlane-manchester-baby/src
 PROJECT_SOURCES = project.v
 
 PROJECT_SOURCES += ptp_a.sv
+PROJECT_SOURCES += ptp_b.sv
 PROJECT_SOURCES += $(LOGISIM_HDL_DIR)/base/logisimTickGenerator.v
 PROJECT_SOURCES += $(LOGISIM_HDL_DIR)/base/LogisimClockComponent.v
 PROJECT_SOURCES += $(LOGISIM_HDL_DIR)/gates/AND_GATE.v
@@ -63,6 +64,9 @@ MODULE = test
 
 test_ptp_a:
 	$(MAKE) sim MODULE=test_ptp_a TOPLEVEL=tb_ptp_a
+
+test_ptp_b:
+	$(MAKE) sim MODULE=test_ptp_b TOPLEVEL=tb_ptp_b
 
 # include cocotb's make rules to take care of the simulator setup
 include $(shell cocotb-config --makefiles)/Makefile.sim

@@ -88,3 +88,24 @@ module tb_ptp_a ();
   );
 
 endmodule
+
+module tb_ptp_b ();
+
+`ifdef COCOTB_SIM
+  initial begin
+    $dumpfile("tb_ptp_b.vcd");
+    $dumpvars(0, tb_ptp_b);
+    #1;
+  end
+`endif
+
+  reg control_i, reset_i;
+  reg [31:0] value_a_i, value_b_i;
+  wire [7:0] value_o;
+
+  ptp_b uut_ptp_b (
+    .control_i(control_i), .reset_i(reset_i), .value_a_i(value_a_i), .value_b_i(value_b_i),
+    .value_o(value_o)
+  );
+
+endmodule
