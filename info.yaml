@@ -1,53 +1,73 @@
 # Tiny Tapeout project information
 project:
-  title:        ""      # Project title
-  author:       ""      # Your name
+  title:        "Manchester Baby"      # Project title
+  author:       "Kristaps Jurkans"      # Your name
   discord:      ""      # Your discord username, for communication and automatically assigning you a Tapeout role (optional)
-  description:  ""      # One line description of what your project does
+  description:  "Modern Manchester Baby computer implementation"      # One line description of what your project does
   language:     "Verilog" # other examples include SystemVerilog, Amaranth, VHDL, etc
-  clock_hz:     0       # Clock frequency in Hz (or 0 if not applicable)
+  clock_hz:     1000       # Clock frequency in Hz (or 0 if not applicable)
 
   # How many tiles your design occupies? A single tile is about 167x108 uM.
   tiles: "1x1"          # Valid values: 1x1, 1x2, 2x2, 3x2, 4x2, 6x2 or 8x2
 
   # Your top module name must start with "tt_um_". Make it unique by including your github username:
-  top_module:  "tt_um_example"
+  top_module:  "tt_um_arkis_manchester_baby"
   
   # List your project's source files here. Source files must be in ./src and you must list each source file separately, one per line:
   source_files:        
     - "project.v"
+    - "ptp_a.sv"
+    - "ptp_b.sv"
+    - "/openlane-manchester-baby/logisim/hdl/base/logisimTickGenerator.v"
+    - "/openlane-manchester-baby/logisim/hdl/base/LogisimClockComponent.v"
+    - "/openlane-manchester-baby/logisim/hdl/gates/AND_GATE.v"
+    - "/openlane-manchester-baby/logisim/hdl/gates/OR_GATE_BUS_5_INPUTS.v"
+    - "/openlane-manchester-baby/logisim/hdl/gates/OR_GATE_3_INPUTS.v"
+    - "/openlane-manchester-baby/logisim/hdl/gates/OR_GATE.v"
+    - "/openlane-manchester-baby/logisim/hdl/gates/OR_GATE_BUS.v"
+    - "/openlane-manchester-baby/logisim/hdl/circuit/main.v"
+    - "/openlane-manchester-baby/logisim/hdl/toplevel/logisimTopLevelShell.v"
+    - "/openlane-manchester-baby/logisim/hdl/plexers/Decoder_8.v"
+    - "/openlane-manchester-baby/logisim/hdl/plexers/Multiplexer_bus_2.v"
+    - "/openlane-manchester-baby/logisim/hdl/arith/Adder.v"
+    - "/openlane-manchester-baby/logisim/hdl/arith/Comparator.v"
+    - "/openlane-manchester-baby/logisim/hdl/arith/Subtractor.v"
+    - "/openlane-manchester-baby/logisim/hdl/memory/REGISTER_FLIP_FLOP.v"
+    - "/openlane-manchester-baby/logisim/hdl/memory/LogisimCounter.v"
+    - "/openlane-manchester-baby/logisim/hdl/memory/S_R_FLIPFLOP.v"
+    - "/openlane-manchester-baby/src/manchester_baby.v"
 
 # The pinout of your project. Leave unused pins blank. DO NOT delete or add any pins.
 pinout:
   # Inputs
-  ui[0]: ""
-  ui[1]: ""
-  ui[2]: ""
-  ui[3]: ""
-  ui[4]: ""
-  ui[5]: ""
-  ui[6]: ""
-  ui[7]: ""
+  ui[0]: "Parallel data input pin 0"
+  ui[1]: "Parallel data input pin 1"
+  ui[2]: "Parallel data input pin 2"
+  ui[3]: "Parallel data input pin 3"
+  ui[4]: "Parallel data input pin 4"
+  ui[5]: "Parallel data input pin 5"
+  ui[6]: "Parallel data input pin 6"
+  ui[7]: "Parallel data input pin 7"
 
   # Outputs
-  uo[0]: ""
-  uo[1]: ""
-  uo[2]: ""
-  uo[3]: ""
-  uo[4]: ""
-  uo[5]: ""
-  uo[6]: ""
-  uo[7]: ""
+  uo[0]: "Parallel data output pin 0"
+  uo[1]: "Parallel data output pin 1"
+  uo[2]: "Parallel data output pin 2"
+  uo[3]: "Parallel data output pin 3"
+  uo[4]: "Parallel data output pin 4"
+  uo[5]: "Parallel data output pin 5"
+  uo[6]: "Parallel data output pin 6"
+  uo[7]: "Parallel data output pin 7"
 
   # Bidirectional pins
-  uio[0]: ""
-  uio[1]: ""
-  uio[2]: ""
-  uio[3]: ""
-  uio[4]: ""
-  uio[5]: ""
-  uio[6]: ""
-  uio[7]: ""
+  uio[0]: "PTP A control signal"
+  uio[1]: "PTP B control signal"
+  uio[2]: "PTP reset_n"
+  uio[3]: "Baby reset_n"
+  uio[4]: "Allow Baby execution (pseudo halt)"
+  uio[5]: "Baby clock output"
+  uio[6]: "Baby stop lamp"
+  uio[7]: "Baby memory R/W signal"
 
 # Do not change!
 yaml_version: 6
