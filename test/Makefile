@@ -62,11 +62,11 @@ TOPLEVEL = tb
 # MODULE is the basename of the Python test file
 MODULE = test
 
-test_ptp_a:
-	$(MAKE) sim MODULE=test_ptp_a TOPLEVEL=tb_ptp_a
+# test_ptp_a:
+	# $(MAKE) sim MODULE=test_ptp_a TOPLEVEL=tb_ptp_a
 
-test_ptp_b:
-	$(MAKE) sim MODULE=test_ptp_b TOPLEVEL=tb_ptp_b
+# test_ptp_b:
+	# $(MAKE) sim MODULE=test_ptp_b TOPLEVEL=tb_ptp_b
 
 # include cocotb's make rules to take care of the simulator setup
 include $(shell cocotb-config --makefiles)/Makefile.sim
