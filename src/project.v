@@ -40,10 +40,10 @@ module tt_um_arkis_manchester_baby (
 
   wire [31:0] w_ram_data_to_baby, w_ram_data_from_baby;
   wire [4:0] w_ram_addr;
-  wire gated_clock;
+  // wire gated_clock;
   wire w_baby_internal_clock;
 
-  assign gated_clock = clk & uio_in[4];
+  // assign gated_clock = clk & uio_in[4];
 
 
   // 8-bit value in from pico, 32-bit value to baby
@@ -58,7 +58,7 @@ module tt_um_arkis_manchester_baby (
   );
 
   manchester_baby manchester_baby (
-    .clock(gated_clock), .reset_i(~uio_in[3]), .ram_data_i(w_ram_data_to_baby), 
+    .clock(clk), .clock_toggle(uio_in[4]), .reset_i(~uio_in[3]), .ram_data_i(w_ram_data_to_baby), 
     .ram_data_o(w_ram_data_from_baby), .ram_addr_o(w_ram_addr), .ram_rw_en_o(uio_out[7]), 
     .stop_lamp_o(uio_out[6]), .clock_o(w_baby_internal_clock)
   );
