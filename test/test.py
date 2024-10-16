@@ -69,6 +69,7 @@ async def run_test_prog(dut):
     def update_tick_counter(current_tick):
         return (current_tick + 1) % 8
 
+    is_gate_level_test = False
 
     program = [
         0x00000013, 0x0000401f, 0x0000601f, 0x0000401f,
@@ -133,10 +134,15 @@ async def run_test_prog(dut):
         elif rw_intent == WRITE:
             program[address] = data_rx
 
-        dut._log.info(f"[machine] PC: {hex(dut.user_project.manchester_baby.manchester_baby_instance.CIRCUIT_0.PC.q.value)}, " \
-        f"IR: {hex(dut.user_project.manchester_baby.manchester_baby_instance.CIRCUIT_0.IR.q.value)}, " \
-        f"ACC: {hex(dut.user_project.manchester_baby.manchester_baby_instance.CIRCUIT_0.Acc.q.value)}, " \
-        f"tick: {tick}")
+        # gate level test fails because we cant probe the hierarchy any more
+        if not is_gate_level_test:
+            try:
+                dut._log.info(f"[machine] PC: {hex(dut.user_project.manchester_baby.manchester_baby_instance.CIRCUIT_0.PC.q.value)}, " \
+                f"IR: {hex(dut.user_project.manchester_baby.manchester_baby_instance.CIRCUIT_0.IR.q.value)}, " \
+                f"ACC: {hex(dut.user_project.manchester_baby.manchester_baby_instance.CIRCUIT_0.Acc.q.value)}, " \
+                f"tick: {tick}")
+            except AttributeError:
+                is_gate_level_test = True
 
     assert baby_stop_lamp.value == 1, "stop lamp was not high, but still stopped responding?"
     assert program[-4] == 0xe0000000, f"baby stopped but answer was not as expected (got {hex(program[-4])} instead)"
