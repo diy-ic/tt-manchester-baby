@@ -28,13 +28,13 @@ module tt_um_krisjdev_manchester_baby (
     bidir:
       7 : output : ram_rw_en_o            1
       6 : output : stop_lamp_o            1
-      5 : output : clock_o                1
-      4 : input  : allow baby exec        0
-      3 : input  : baby reset_n           0
+      5 : input  : unused                 0
+      4 : input  : unused                 0
+      3 : input  : unused                 0
       2 : input  : ptp reset_n            0
       1 : input  : ptp_b control          0
       0 : input  : ptp_a control          0
-      mask:                           0b11100000
+      mask:                           0b11000000
   */
 
   wire [31:0] w_ram_data_to_baby, w_ram_data_from_baby;
@@ -53,12 +53,12 @@ module tt_um_krisjdev_manchester_baby (
 
   manchester_baby manchester_baby (
     .clock(clk), 
-    .reset_i(~uio_in[3]), .ram_data_i(w_ram_data_to_baby), 
+    .reset_i(~rst_n), .ram_data_i(w_ram_data_to_baby), 
     .ram_data_o(w_ram_data_from_baby), .ram_addr_o(w_ram_addr), .ram_rw_en_o(uio_out[7]), 
     .stop_lamp_o(uio_out[6])
   );
 
-  assign uio_oe = 8'b11100000;
-  assign uio_out[5:0] = 'h0;
+  assign uio_oe = 8'b11000000;
+  assign uio_out[5:0] = 6'h0;
 
 endmodule

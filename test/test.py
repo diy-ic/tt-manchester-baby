@@ -87,7 +87,7 @@ async def run_test_prog(dut):
     ptp_a_ctrl = dut.uio_in[0]
     ptp_b_ctrl = dut.uio_in[1]
     ptp_reset_n = dut.uio_in[2]
-    baby_reset_n = dut.uio_in[3]
+    baby_reset_n = dut.rst_n
 
     baby_stop_lamp = dut.uio_out[6]
     baby_ram_rw = dut.uio_out[7] # 0 = read, 1 = write
