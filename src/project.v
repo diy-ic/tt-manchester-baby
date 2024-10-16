@@ -1,11 +1,11 @@
 /*
  * Copyright (c) 2024 Kristaps Jurkans
  * SPDX-License-Identifier: Apache-2.0
- */
+*/
 
 `default_nettype none
 
-module tt_um_arkis_manchester_baby (
+module tt_um_krisjdev_manchester_baby (
     input  wire [7:0] ui_in,    // Dedicated inputs
     output wire [7:0] uo_out,   // Dedicated outputs
     input  wire [7:0] uio_in,   // IOs: Input path
@@ -17,7 +17,6 @@ module tt_um_arkis_manchester_baby (
 );
 
   /*
-
     io mapping
 
     inputs:
@@ -40,11 +39,6 @@ module tt_um_arkis_manchester_baby (
 
   wire [31:0] w_ram_data_to_baby, w_ram_data_from_baby;
   wire [4:0] w_ram_addr;
-  // wire gated_clock;
-  wire w_baby_internal_clock;
-
-  // assign gated_clock = clk & uio_in[4];
-
 
   // 8-bit value in from pico, 32-bit value to baby
   ptp_a ptp_a (
@@ -58,13 +52,13 @@ module tt_um_arkis_manchester_baby (
   );
 
   manchester_baby manchester_baby (
-    .clock(clk), .clock_toggle(uio_in[4]), .reset_i(~uio_in[3]), .ram_data_i(w_ram_data_to_baby), 
+    .clock(clk), 
+    .reset_i(~uio_in[3]), .ram_data_i(w_ram_data_to_baby), 
     .ram_data_o(w_ram_data_from_baby), .ram_addr_o(w_ram_addr), .ram_rw_en_o(uio_out[7]), 
-    .stop_lamp_o(uio_out[6]), .clock_o(w_baby_internal_clock)
+    .stop_lamp_o(uio_out[6])
   );
 
   assign uio_oe = 8'b11100000;
-  assign uio_out[5] = w_baby_internal_clock;
-  assign uio_out[4:0] = 5'h0;
+  assign uio_out[5:0] = 'h0;
 
 endmodule

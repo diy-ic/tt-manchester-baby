@@ -1,25 +1,18 @@
 module manchester_baby (
-    input wire clock,
-    input wire clock_toggle,
+    input clock,
     input wire reset_i,
     input [31:0] ram_data_i,
     output [31:0] ram_data_o,
     output wire [4:0] ram_addr_o,
     output wire ram_rw_en_o, // 0 = read, 1 = write
-    output wire stop_lamp_o,
-    output wire clock_o
+    output wire stop_lamp_o
 );
 
-    wire gated_clock;
-    assign gated_clock = clock & clock_toggle;
-
-
     logisimTopLevelShell manchester_baby_instance (
-        .fpgaGlobalClock(gated_clock),
+        .clock_i_0(clock),
         .reset_i_0(reset_i),
         .stop_lamp_o_0(stop_lamp_o),
         .ram_rw_en_o_0(ram_rw_en_o),
-        .clock_o_0(clock_o),
 
         .ram_addr_o_0(ram_addr_o[0]),
         .ram_addr_o_1(ram_addr_o[1]),

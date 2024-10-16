@@ -31,7 +31,7 @@ module tb ();
 `endif
 
   // Replace tt_um_example with your module name:
-  tt_um_arkis_manchester_baby user_project (
+  tt_um_krisjdev_manchester_baby user_project (
 
       // Include power ports for the Gate Level test:
 `ifdef GL_TEST
