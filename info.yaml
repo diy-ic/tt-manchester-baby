@@ -24,7 +24,6 @@ project:
     - "openlane-manchester-baby/logisim/hdl/gates/OR_GATE.v"
     - "openlane-manchester-baby/logisim/hdl/gates/OR_GATE_BUS.v"
     - "openlane-manchester-baby/logisim/hdl/circuit/main.v"
-    - "openlane-manchester-baby/logisim/hdl/toplevel/logisimTopLevelShell.v"
     - "openlane-manchester-baby/logisim/hdl/plexers/Decoder_8.v"
     - "openlane-manchester-baby/logisim/hdl/plexers/Multiplexer_bus_2.v"
     - "openlane-manchester-baby/logisim/hdl/arith/Adder.v"
