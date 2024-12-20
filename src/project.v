@@ -6,6 +6,10 @@
 `default_nettype none
 
 module tt_um_krisjdev_manchester_baby (
+`ifdef QUARTUS_EXPOSE_FPGA_CLK_FOR_SIGNALTAP
+    input wire fpga_clk,
+`endif
+
     input  wire [7:0] ui_in,    // Dedicated inputs
     output wire [7:0] uo_out,   // Dedicated outputs
     input  wire [7:0] uio_in,   // IOs: Input path
@@ -37,25 +41,34 @@ module tt_um_krisjdev_manchester_baby (
       mask:                           0b11000000
   */
 
-  wire [31:0] w_ram_data_to_baby, w_ram_data_from_baby;
-  wire [4:0] w_ram_addr;
+  wire [31:0] w_ram_data_to_baby, w_ram_data_from_baby, w_state_ir, w_state_acc;
+  wire [4:0] w_ram_addr, w_state_pc;
 
   // 8-bit value in from pico, 32-bit value to baby
   ptp_a ptp_a (
     .control_i(uio_in[0]), .reset_i(~uio_in[2]), .value_i(ui_in), .value_o(w_ram_data_to_baby)
   );
 
+
+  wire [31:0] ptp_in_a, ptp_in_b;
+
+  assign ptp_in_a = uio_in[3] ? 32'hDEADBEEF : w_ram_addr;
+  assign ptp_in_b = uio_in[3] ? 32'hCAFEB0BA : w_ram_data_from_baby;
+
   // 2x 32-bit values from baby out to pico
   ptp_b ptp_b (
-    .control_i(uio_in[1]), .reset_i(~uio_in[2]), .value_a_i({27'h0, w_ram_addr}), .value_b_i(w_ram_data_from_baby),
+    .control_i(uio_in[1]), .reset_i(~uio_in[2]), 
+    .value_a_i(ptp_in_a), .value_b_i(ptp_in_b), .value_c_i(w_state_pc), 
+    .value_d_i(w_state_ir), .value_e_i(w_state_acc),
     .value_o(uo_out)
   );
 
-  manchester_baby manchester_baby (
-    .clock(clk), 
-    .reset_i(~rst_n), .ram_data_i(w_ram_data_to_baby), 
-    .ram_data_o(w_ram_data_from_baby), .ram_addr_o(w_ram_addr), .ram_rw_en_o(uio_out[7]), 
-    .stop_lamp_o(uio_out[6])
+  main manchester_baby (
+    .clock_i(clk), .reset_i(~rst_n), 
+    .ram_data_i(w_ram_data_to_baby), .ram_data_o(w_ram_data_from_baby), 
+    .ram_addr_o(w_ram_addr), .ram_rw_en_o(uio_out[7]), 
+    .stop_lamp_o(uio_out[6]),
+    .state_ir_o(w_state_ir), .state_acc_o(w_state_acc), .state_pc_o(w_state_pc)
   );
 
   assign uio_oe = 8'b11000000;
