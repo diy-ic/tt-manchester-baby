@@ -1,4 +1,3 @@
-# SPDX-FileCopyrightText: © 2024 Tiny Tapeout
 # SPDX-FileCopyrightText: © 2024 Kristaps Jurkans
 # SPDX-License-Identifier: MIT
 
@@ -9,34 +8,35 @@ from cocotb.triggers import Timer
 READ = 0
 WRITE = 1
 
-async def get_ptp_b_data(dut):
+async def _read_32b(dut):
     ptp_b_ctrl = dut.uio_in[1]
-
-    address = 0
-    data = 0
 
     async def _pulse_control_line():
         ptp_b_ctrl.value = 1
         await Timer(1, "ns")
         ptp_b_ctrl.value = 0
         await Timer(1, "ns")
-    
-    for i in range(4):
-        await _pulse_control_line()
-        address += dut.uo_out.value
-        if i != 3:
-            address = address << 8
 
+    value = 0
 
     for i in range(4):
         await _pulse_control_line()
-        data += dut.uo_out.value
-        if i != 3:
-            data = data << 8
+        value += dut.uo_out.value << 8 * (3-i)
 
-    dut._log.info(f"[ptp_b] got: address = {hex(address)}, data = {hex(data)}")
+    return value
 
-    return address, data
+
+async def get_ptp_b_data(dut):
+
+    address = await _read_32b(dut)
+    data = await _read_32b(dut)
+    pc = await _read_32b(dut)
+    ir = await _read_32b(dut)
+    acc = await _read_32b(dut)
+
+    dut._log.info(f"[ptp_b] got: address={hex(address)}, data={hex(data)}")
+
+    return address, data, pc, ir, acc
 
 async def send_32b_ptp_a(dut, value_to_send:int):
     ptp_a_ctrl = dut.uio_in[0]
@@ -87,6 +87,7 @@ async def run_test_prog(dut):
     ptp_a_ctrl = dut.uio_in[0]
     ptp_b_ctrl = dut.uio_in[1]
     ptp_reset_n = dut.uio_in[2]
+    debug_ptp_b = dut.uio_in[3]
     baby_reset_n = dut.rst_n
 
     baby_stop_lamp = dut.uio_out[6]
@@ -95,6 +96,7 @@ async def run_test_prog(dut):
     ptp_reset_n.value = 0
     ptp_a_ctrl.value = 0
     ptp_b_ctrl.value = 0
+    debug_ptp_b.value = 0
     baby_reset_n.value = 0
     dut.rst_n.value = 0
     dut.ui_in.value = 0
@@ -127,7 +129,9 @@ async def run_test_prog(dut):
         await Timer(1, "ns")
         
 
-        address, data_rx = await get_ptp_b_data(dut)
+        address, data_rx, pc, ir, acc = await get_ptp_b_data(dut)
+
+        dut._log.info(f"[machine] PC: {hex(pc)}, IR: {hex(ir)}, ACC: {hex(acc)}")
 
         if rw_intent == READ:
             data_tx = program[address]
@@ -135,14 +139,14 @@ async def run_test_prog(dut):
             program[address] = data_rx
 
         # gate level test fails because we cant probe the hierarchy any more
-        if not is_gate_level_test:
-            try:
-                dut._log.info(f"[machine] PC: {hex(dut.user_project.manchester_baby.manchester_baby_instance.CIRCUIT_0.PC.q.value)}, " \
-                f"IR: {hex(dut.user_project.manchester_baby.manchester_baby_instance.CIRCUIT_0.IR.q.value)}, " \
-                f"ACC: {hex(dut.user_project.manchester_baby.manchester_baby_instance.CIRCUIT_0.Acc.q.value)}, " \
-                f"tick: {tick}")
-            except AttributeError:
-                is_gate_level_test = True
+        # if not is_gate_level_test:
+        #     try:
+        #         dut._log.info(f"[machine] PC: {hex(dut.user_project.manchester_baby.manchester_baby_instance.CIRCUIT_0.PC.q.value)}, " \
+        #         f"IR: {hex(dut.user_project.manchester_baby.manchester_baby_instance.CIRCUIT_0.IR.q.value)}, " \
+        #         f"ACC: {hex(dut.user_project.manchester_baby.manchester_baby_instance.CIRCUIT_0.Acc.q.value)}, " \
+        #         f"tick: {tick}")
+        #     except AttributeError:
+        #         is_gate_level_test = True
 
     assert baby_stop_lamp.value == 1, "stop lamp was not high, but still stopped responding?"
     assert program[-4] == 0xe0000000, f"baby stopped but answer was not as expected (got {hex(program[-4])} instead)"
