@@ -34,7 +34,7 @@ module tt_um_krisjdev_manchester_baby (
       6 : output : stop_lamp_o            1
       5 : input  : unused                 0
       4 : input  : unused                 0
-      3 : input  : unused                 0
+      3 : input  : force debug values     0
       2 : input  : ptp reset_n            0
       1 : input  : ptp_b control          0
       0 : input  : ptp_a control          0
