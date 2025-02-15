@@ -37,34 +37,34 @@ project:
 # The pinout of your project. Leave unused pins blank. DO NOT delete or add any pins.
 pinout:
   # Inputs
-  ui[0]: "Parallel data input pin 0"
-  ui[1]: "Parallel data input pin 1"
-  ui[2]: "Parallel data input pin 2"
-  ui[3]: "Parallel data input pin 3"
-  ui[4]: "Parallel data input pin 4"
-  ui[5]: "Parallel data input pin 5"
-  ui[6]: "Parallel data input pin 6"
-  ui[7]: "Parallel data input pin 7"
+  ui[0]: "data_in[0]"
+  ui[1]: "data_in[1]"
+  ui[2]: "data_in[2]"
+  ui[3]: "data_in[3]"
+  ui[4]: "data_in[4]"
+  ui[5]: "data_in[5]"
+  ui[6]: "data_in[6]"
+  ui[7]: "data_in[7]"
 
   # Outputs
-  uo[0]: "Parallel data output pin 0"
-  uo[1]: "Parallel data output pin 1"
-  uo[2]: "Parallel data output pin 2"
-  uo[3]: "Parallel data output pin 3"
-  uo[4]: "Parallel data output pin 4"
-  uo[5]: "Parallel data output pin 5"
-  uo[6]: "Parallel data output pin 6"
-  uo[7]: "Parallel data output pin 7"
+  uo[0]: "data_out[0]"
+  uo[1]: "data_out[1]"
+  uo[2]: "data_out[2]"
+  uo[3]: "data_out[3]"
+  uo[4]: "data_out[4]"
+  uo[5]: "data_out[5]"
+  uo[6]: "data_out[6]"
+  uo[7]: "data_out[7]"
 
   # Bidirectional pins
-  uio[0]: "PTP A control signal"
-  uio[1]: "PTP B control signal"
-  uio[2]: "PTP reset_n"
-  uio[3]: "Baby reset_n"
-  uio[4]: "Allow Baby execution (pseudo halt)"
-  uio[5]: "Baby clock output"
-  uio[6]: "Baby stop lamp"
-  uio[7]: "Baby memory R/W signal"
+  uio[0]: "(in) PTP A control signal"
+  uio[1]: "(in) PTP B control signal"
+  uio[2]: "(in) PTP reset_n"
+  uio[3]: "(in) Force debug values on PTP A"
+  uio[4]: "-"
+  uio[5]: "-"
+  uio[6]: "(out) Stop Lamp"
+  uio[7]: "(out) Baby RAM read/write signal"
 
 # Do not change!
 yaml_version: 6
