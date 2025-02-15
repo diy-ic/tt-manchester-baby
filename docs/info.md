@@ -54,13 +54,13 @@ Due to pin limitations, there was a need to serialise the I/O of the Baby in som
 
 If using the interface provided at https://github.com/krisjdev/pico-baby-if/, it will automatically begin executing a Turing Long Division program, found in ``program.c``. When this design was tested on an FPGA at 50MHz, the program took roughly 3-4 minutes to execute - although the majority of that was because of the constant writing to the terminal, sorry! 
 
-![](/docs/crt.jpg)
+![](crt.jpg)
 
 You can disable the CRT-esque display by commenting out ``draw_crt();`` at the very beginning of the ``while(true)`` loop, which should considerably speed up the execution.
 
 Once the program finishes executing, a message will appear that the stop lamp has gone high.
 
-![](/docs/msg.jpg)
+![](msg.jpg)
 
 In the case of the given Turing Long Division program the answer should be ``0xe0000000`` at address ``0x1c``.
 
