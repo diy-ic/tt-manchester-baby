@@ -33,7 +33,7 @@ module tt_um_krisjdev_manchester_baby (
       7 : output : ram_rw_en_o            1
       6 : output : stop_lamp_o            1
       5 : input  : unused                 0
-      4 : input  : unused                 0
+      4 : input  : serialise              0
       3 : input  : force debug values     0
       2 : input  : ptp reset_n            0
       1 : input  : ptp_b control          0
@@ -46,19 +46,22 @@ module tt_um_krisjdev_manchester_baby (
 
   // 8-bit value in from pico, 32-bit value to baby
   ptp_a ptp_a (
-    .control_i(uio_in[0]), .reset_i(~uio_in[2]), .value_i(ui_in), .value_o(w_ram_data_to_baby)
+    .control_i(uio_in[0]), .reset_i(~uio_in[2]), .serialise_i(uio_in[4]),
+    .value_i(ui_in), .value_o(w_ram_data_to_baby)
   );
 
 
-  wire [31:0] ptp_in_a, ptp_in_b;
+  wire [31:0] ptp_in_a, ptp_in_b, ptp_in_c;
 
+  // TODO: we might only just need 1 magic value?
   assign ptp_in_a = uio_in[3] ? 32'hDEADBEEF : w_ram_addr;
   assign ptp_in_b = uio_in[3] ? 32'hCAFEB0BA : w_ram_data_from_baby;
+  assign ptp_in_c = uio_in[3] ? w_ram_data_to_baby : w_state_pc;
 
   // 2x 32-bit values from baby out to pico
   ptp_b ptp_b (
-    .control_i(uio_in[1]), .reset_i(~uio_in[2]), 
-    .value_a_i(ptp_in_a), .value_b_i(ptp_in_b), .value_c_i(w_state_pc), 
+    .control_i(uio_in[1]), .reset_i(~uio_in[2]), .serialise_i(uio_in[4]),
+    .value_a_i(ptp_in_a), .value_b_i(ptp_in_b), .value_c_i(ptp_in_c), 
     .value_d_i(w_state_ir), .value_e_i(w_state_acc),
     .value_o(uo_out)
   );
