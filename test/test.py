@@ -39,52 +39,36 @@ class ManchesterBaby():
         self.baby_reset_n.value = 0
         dut.ui_in.value = 0
 
-
-async def _read_32b(dut):
-    ptp_b_ctrl = dut.uio_in[1]
-
-    async def _pulse_control_line():
-        ptp_b_ctrl.value = 1
+    async def _pulse_control_line(self) -> None:
+        self.ptp_b_ctrl.value = 1
         await Timer(1, "ns")
-        ptp_b_ctrl.value = 0
+        self.ptp_b_ctrl.value = 0
         await Timer(1, "ns")
-
-    value = 0
-
-    for i in range(4):
-        await _pulse_control_line()
-        value += dut.uo_out.value << 8 * (3-i)
-
-    return value
-
-
-async def get_ptp_b_data(dut):
-
-    address = await _read_32b(dut)
-    data = await _read_32b(dut)
-    pc = await _read_32b(dut)
-    ir = await _read_32b(dut)
-    acc = await _read_32b(dut)
-
-    dut._log.info(f"[ptp_b] got: address={hex(address)}, data={hex(data)}")
-
-    return address, data, pc, ir, acc
-
-async def send_32b_ptp_a(dut, value_to_send:int):
-    ptp_a_ctrl = dut.uio_in[0]
     
-    byte_list = value_to_send.to_bytes(4)
-    dut._log.info(f"[ptp_a] sending: {hex(value_to_send)}")
+    async def _read_32b(self, dut) -> int:
+        rx_value = 0
+        for i in range(4):
+            await self._pulse_control_line()
+            rx_value += dut.uo_out.value << 8 * (3-i)
 
-    for byte in byte_list:
-        
-        dut.ui_in.value = byte
- 
-        await Timer(1, "ns")
-        ptp_a_ctrl.value = 1
-        await Timer(1, "ns")
-        ptp_a_ctrl.value = 0
-        await Timer(1, "ns")
+        return rx_value
+
+
+    async def get_ptp_b_data(self, dut) -> list[int]:
+        packet = [await self._read_32b(dut) for i in range(5)]
+        return packet
+
+    async def send_32b_ptp_a(self, dut, value: int) -> None:
+        byte_list = value.to_bytes(4)
+
+        for byte in byte_list:
+            dut.ui_in.value = byte
+
+            await Timer(1, "ns")
+            self.ptp_a_ctrl.value = 1
+            await Timer(1, "ns")
+            self.ptp_a_ctrl.value = 0
+            await Timer(1, "ns")
 
 async def pulse_clock(dut, pulses=1):
     
@@ -116,7 +100,7 @@ async def run_test_prog(dut):
 
     while True:
 
-        await send_32b_ptp_a(dut, data_tx)
+        await baby.send_32b_ptp_a(dut, data_tx)
         await pulse_clock(dut)
         tick = update_tick_counter(tick)
         await Timer(1, "ns")
@@ -133,7 +117,7 @@ async def run_test_prog(dut):
         await Timer(1, "ns")
         
 
-        address, data_rx, pc, ir, acc = await get_ptp_b_data(dut)
+        address, data_rx, pc, ir, acc = await baby.get_ptp_b_data(dut)
 
         dut._log.info(f"[machine] PC: {hex(pc)}, IR: {hex(ir)}, ACC: {hex(acc)}")
 
