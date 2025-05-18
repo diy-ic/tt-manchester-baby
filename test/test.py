@@ -118,8 +118,8 @@ async def run_test_prog(dut):
         
 
         address, data_rx, pc, ir, acc = await baby.get_ptp_b_data(dut)
-
-        dut._log.info(f"[machine] PC: {hex(pc)}, IR: {hex(ir)}, ACC: {hex(acc)}")
+        if tick == 0:
+            dut._log.info(f"PC: {hex(pc)}, IR: {hex(ir)}, ACC: {hex(acc)}")
 
         if rw_intent == READ:
             data_tx = baby.program[address]
