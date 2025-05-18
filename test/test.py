@@ -8,16 +8,37 @@ from cocotb.triggers import Timer
 READ = 0
 WRITE = 1
 
-program = [
-        0x00000013, 0x0000401f, 0x0000601f, 0x0000401f,
-        0x0000801e, 0x0000c000, 0x00000000, 0x0000401f,
-        0x0000601f, 0x0000401c, 0x0000801c, 0x0000601c,
-        0x0000401f, 0x0000801f, 0x0000601f, 0x0000401c,
-        0x0000601c, 0x0000c000, 0x0000001a, 0x0000e000,
-        0x0000601f, 0x0000401d, 0x0000801c, 0x0000801c,
-        0x0000601c, 0x0000001b, 0x00000002, 0x0000000b,
-        0x00000000, 0x20000000, 0x00000014, 0x00000024
-    ]
+class ManchesterBaby():
+
+    def __init__(self, dut):
+
+        self.program = [
+            0x00000013, 0x0000401f, 0x0000601f, 0x0000401f,
+            0x0000801e, 0x0000c000, 0x00000000, 0x0000401f,
+            0x0000601f, 0x0000401c, 0x0000801c, 0x0000601c,
+            0x0000401f, 0x0000801f, 0x0000601f, 0x0000401c,
+            0x0000601c, 0x0000c000, 0x0000001a, 0x0000e000,
+            0x0000601f, 0x0000401d, 0x0000801c, 0x0000801c,
+            0x0000601c, 0x0000001b, 0x00000002, 0x0000000b,
+            0x00000000, 0x20000000, 0x00000014, 0x00000024
+        ]
+
+        self.ptp_a_ctrl = dut.uio_in[0]
+        self.ptp_b_ctrl = dut.uio_in[1]
+        self.ptp_reset_n = dut.uio_in[2]
+        self.debug_ptp_b = dut.uio_in[3]
+        self.baby_reset_n = dut.rst_n
+
+        self.baby_stop_lamp = dut.uio_out[6]
+        self.baby_ram_rw = dut.uio_out[7]
+
+        self.ptp_reset_n.value = 0
+        self.ptp_a_ctrl.value = 0
+        self.ptp_b_ctrl.value = 0
+        self.debug_ptp_b.value = 0
+        self.baby_reset_n.value = 0
+        dut.ui_in.value = 0
+
 
 async def _read_32b(dut):
     ptp_b_ctrl = dut.uio_in[1]
@@ -80,35 +101,18 @@ async def run_test_prog(dut):
     def update_tick_counter(current_tick):
         return (current_tick + 1) % 8
 
-    is_gate_level_test = False
-
     dut.ena.value = 1
 
-    ptp_a_ctrl = dut.uio_in[0]
-    ptp_b_ctrl = dut.uio_in[1]
-    ptp_reset_n = dut.uio_in[2]
-    debug_ptp_b = dut.uio_in[3]
-    baby_reset_n = dut.rst_n
-
-    baby_stop_lamp = dut.uio_out[6]
-    baby_ram_rw = dut.uio_out[7] # 0 = read, 1 = write
-
-    ptp_reset_n.value = 0
-    ptp_a_ctrl.value = 0
-    ptp_b_ctrl.value = 0
-    debug_ptp_b.value = 0
-    baby_reset_n.value = 0
-    dut.rst_n.value = 0
-    dut.ui_in.value = 0
+    baby = ManchesterBaby(dut)
 
     await pulse_clock(dut, 2)
 
-    ptp_reset_n.value = 1
-    baby_reset_n.value = 1
+    baby.ptp_reset_n.value = 1
+    baby.baby_reset_n.value = 1
     
     # initial state
     address = 0
-    data_tx = program[address]
+    data_tx = baby.program[address]
 
     while True:
 
@@ -117,15 +121,15 @@ async def run_test_prog(dut):
         tick = update_tick_counter(tick)
         await Timer(1, "ns")
 
-        rw_intent = baby_ram_rw.value
+        rw_intent = baby.baby_ram_rw.value
 
-        if baby_stop_lamp == 1:
+        if baby.baby_stop_lamp == 1:
             break
 
         # present data - need ptp_a counter to hit 5
-        ptp_a_ctrl.value = 1
+        baby.ptp_a_ctrl.value = 1
         await Timer(1, "ns")
-        ptp_a_ctrl.value = 0
+        baby.ptp_a_ctrl.value = 0
         await Timer(1, "ns")
         
 
@@ -134,9 +138,9 @@ async def run_test_prog(dut):
         dut._log.info(f"[machine] PC: {hex(pc)}, IR: {hex(ir)}, ACC: {hex(acc)}")
 
         if rw_intent == READ:
-            data_tx = program[address]
+            data_tx = baby.program[address]
         elif rw_intent == WRITE:
-            program[address] = data_rx
+            baby.program[address] = data_rx
 
-    assert baby_stop_lamp.value == 1, "stop lamp was not high, but still stopped responding?"
-    assert program[-4] == 0xe0000000, f"baby stopped but answer was not as expected (got {hex(program[-4])} instead)"
+    assert baby.baby_stop_lamp.value == 1, "stop lamp was not high, but still stopped responding?"
+    assert baby.program[-4] == 0xe0000000, f"baby stopped but answer was not as expected (got {hex(baby.program[-4])} instead)"
