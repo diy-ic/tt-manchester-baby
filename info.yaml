@@ -61,8 +61,8 @@ pinout:
   uio[1]: "(in) PTP B control signal"
   uio[2]: "(in) PTP reset_n"
   uio[3]: "(in) Force debug values on PTP A"
-  uio[4]: "-"
-  uio[5]: "-"
+  uio[4]: "(in) PTP serialise data"
+  uio[5]: ""
   uio[6]: "(out) Stop Lamp"
   uio[7]: "(out) Baby RAM read/write signal"
 
