@@ -39,6 +39,7 @@ class ManchesterBaby():
         self.debug_ptp.value = 0
         self.baby_reset_n.value = 0
         dut.ui_in.value = 0
+        self.serialise.value = 0
 
     async def _pulse_control_line(self) -> None:
         self.ptp_b_ctrl.value = 1
@@ -48,28 +49,47 @@ class ManchesterBaby():
     
     async def _read_32b(self, dut, serialise: bool = False) -> int:
         rx_value = 0
-        for i in range(4):
-            await self._pulse_control_line()
-            rx_value += dut.uo_out.value << 8 * (3-i)
+        if serialise:
+            for i in range(32):
+                await self._pulse_control_line()
+                rx_value = rx_value << 1
+                rx_value += dut.uo_out[0].value
+        else:
+            for i in range(4):
+                await self._pulse_control_line()
+                rx_value += dut.uo_out.value << 8 * (3-i)
 
         return rx_value
 
 
     async def get_ptp_b_data(self, dut, serialise: bool = False) -> list[int]:
-        packet = [await self._read_32b(dut) for i in range(5)]
+        packet = [await self._read_32b(dut, serialise) for i in range(5)]
         return packet
 
     async def send_32b_ptp_a(self, dut, value: int, serialise: bool = False) -> None:
-        byte_list = value.to_bytes(4)
+    
+        if serialise:
+            for i in range(32):
+                digit = (value & (0x80000000 >> i)) >> 31-i
 
-        for byte in byte_list:
-            dut.ui_in.value = byte
+                dut.ui_in[0].value = digit
 
-            await Timer(1, "ns")
-            self.ptp_a_ctrl.value = 1
-            await Timer(1, "ns")
-            self.ptp_a_ctrl.value = 0
-            await Timer(1, "ns")
+                await Timer(1, "ns")
+                self.ptp_a_ctrl.value = 1
+                await Timer(1, "ns")
+                self.ptp_a_ctrl.value = 0
+                await Timer(1, "ns")
+        else:
+            byte_list = value.to_bytes(4)
+
+            for byte in byte_list:
+                dut.ui_in.value = byte
+
+                await Timer(1, "ns")
+                self.ptp_a_ctrl.value = 1
+                await Timer(1, "ns")
+                self.ptp_a_ctrl.value = 0
+                await Timer(1, "ns")
 
 async def pulse_clock(dut, pulses=1):
     
@@ -94,8 +114,8 @@ async def test_ptp_wide(dut):
     # debug_ptp forces magic values on address & data_rx
     data_1, data_2, _, _, _ = await baby.get_ptp_b_data(dut, serialise=False)
 
-    assert data_1 == 0xDEADBEEF, "did not get expected magic value for address"
-    assert data_2 == 0xCAFEB0BA, "did not get expected magic value for data_rx"
+    assert data_1 == 0xDEADBEEF, "did not get expected magic value"
+    assert data_2 == 0xCAFEB0BA, "did not get expected magic value"
     del data_1
     del data_2
 
@@ -116,6 +136,42 @@ async def test_ptp_wide(dut):
 
     _, _, data_1, _, _ = await baby.get_ptp_b_data(dut, serialise=False)
     assert data_1 == magic_value, f"data sent didn't match magic value - {hex(data_1)} != {hex(magic_value)}"
+
+@cocotb.test()
+async def test_ptp_narrow(dut):
+    dut.ena.value = 1
+    baby = ManchesterBaby(dut)
+
+    await pulse_clock(dut, 2)
+
+    baby.ptp_reset_n.value = 1
+    baby.baby_reset_n.value = 0
+    baby.serialise.value = 1
+    baby.debug_ptp.value = 1
+
+    data_1, data_2, _, _, _ = await baby.get_ptp_b_data(dut, serialise=True)
+    assert data_1 == 0xDEADBEEF, "did not get expected magic value"
+    assert data_2 == 0xCAFEB0BA, "did not get expected magic value"
+    del data_1
+    del data_2
+
+    # reset
+    baby.ptp_reset_n.value = 0
+    await pulse_clock(dut, 2)
+    baby.ptp_reset_n.value = 1
+    await pulse_clock(dut, 2)
+
+    magic_value = 0xBAADF00D
+    await baby.send_32b_ptp_a(dut, magic_value, serialise=True)
+
+    # present data - need ptp_a counter to hit 5
+    baby.ptp_a_ctrl.value = 1
+    await Timer(1, "ns")
+    baby.ptp_a_ctrl.value = 0
+    await Timer(1, "ns")
+
+    _, _, data_1, _, _ = await baby.get_ptp_b_data(dut, serialise=True)
+    assert data_1 == magic_value, f"data sent didn't match magic value - {hex(data_1)} != {hex(magic_value)}"        
 
 
 @cocotb.test()
