@@ -18,13 +18,17 @@ module ptp_b (
     always @ (posedge control_i or posedge reset_i) begin
         
         if (reset_i) begin
+            // NOTE: these cause the build/hardening to fail, but would be more preferable.
+            //       disabled for now, but should be revisted later.
+            // value_o <= internal_concat[CONCAT_SIGNAL_WIDTH-1 -: 8];
+            // value_o <= value_a_i[31:23];
             value_o <= 'd0;
             pointer_q <= 'd0;
         end else begin
 
             if (serialise_i) begin
                 pointer_q <= pointer_q >= CONCAT_SIGNAL_WIDTH-1 ? 'd0 : pointer_q + 'd1;
-                value_o <= internal_concat[CONCAT_SIGNAL_WIDTH-1 - pointer_q];
+                value_o <= {7'b0, internal_concat[CONCAT_SIGNAL_WIDTH-1 - pointer_q]};
             end else begin
                 // 19 = 160 (the total length of signals we have) / 8 bits
                 pointer_q <= pointer_q >= 'd19 ? 'd0 : pointer_q + 'd1; 
