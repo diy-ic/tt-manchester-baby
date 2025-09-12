@@ -41,6 +41,11 @@ class ManchesterBaby():
         dut.ui_in.value = 0
         self.serialise.value = 0
 
+        # unused signals
+        dut.uio_in[7].value = 0
+        dut.uio_in[6].value = 0
+        dut.uio_in[5].value = 0
+
     async def _pulse_control_line(self) -> None:
         self.ptp_b_ctrl.value = 1
         await Timer(1, "ns")
