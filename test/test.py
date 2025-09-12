@@ -48,9 +48,9 @@ class ManchesterBaby():
 
     async def _pulse_control_line(self) -> None:
         self.ptp_b_ctrl.value = 1
-        await Timer(1, "ns")
+        await Timer(1, "us")
         self.ptp_b_ctrl.value = 0
-        await Timer(1, "ns")
+        await Timer(1, "us")
     
     async def _read_32b(self, dut, serialise: bool = False) -> int:
         rx_value = 0
@@ -79,101 +79,101 @@ class ManchesterBaby():
 
                 dut.ui_in[0].value = digit
 
-                await Timer(1, "ns")
+                await Timer(1, "us")
                 self.ptp_a_ctrl.value = 1
-                await Timer(1, "ns")
+                await Timer(1, "us")
                 self.ptp_a_ctrl.value = 0
-                await Timer(1, "ns")
+                await Timer(1, "us")
         else:
             byte_list = value.to_bytes(4)
 
             for byte in byte_list:
                 dut.ui_in.value = byte
 
-                await Timer(1, "ns")
+                await Timer(1, "us")
                 self.ptp_a_ctrl.value = 1
-                await Timer(1, "ns")
+                await Timer(1, "us")
                 self.ptp_a_ctrl.value = 0
-                await Timer(1, "ns")
+                await Timer(1, "us")
 
 async def pulse_clock(dut, pulses=1):
     
     for i in range(pulses):
         dut.clk.value = 1
-        await Timer(1, "ns")
+        await Timer(1, "us")
         dut.clk.value = 0
-        await Timer(1, "ns")
+        await Timer(1, "us")
 
 @cocotb.test()
 async def test_ptp_wide(dut):
     dut.ena.value = 1
+    dut.clk.value = 0
     baby = ManchesterBaby(dut)
+    baby.baby_reset_n.value = 0 # keep baby off during testing
+    await Timer(1, "us")
 
-    await pulse_clock(dut, 2)
-
+    # configure ptp_b
     baby.ptp_reset_n.value = 1
-    baby.baby_reset_n.value = 0 # keep baby off during this
-    baby.serialise.value = 0
     baby.debug_ptp.value = 1
+    baby.serialise.value = 0
+    await Timer(1, "us")
 
-    # debug_ptp forces magic values on address & data_rx
+    # debug_ptp forces magic values in pos 1 & 2
     data_1, data_2, _, _, _ = await baby.get_ptp_b_data(dut, serialise=False)
 
     assert data_1 == 0xDEADBEEF, "did not get expected magic value"
     assert data_2 == 0xCAFEB0BA, "did not get expected magic value"
-    del data_1
-    del data_2
 
     # reset
     baby.ptp_reset_n.value = 0
-    await pulse_clock(dut, 2)
+    await Timer(1, "us")
     baby.ptp_reset_n.value = 1
-    await pulse_clock(dut, 2)
+    await Timer(1, "us")
 
     magic_value = 0xBAADF00D
     await baby.send_32b_ptp_a(dut, magic_value, serialise=False)
-    
+
     # present data - need ptp_a counter to hit 5
     baby.ptp_a_ctrl.value = 1
-    await Timer(1, "ns")
+    await Timer(1, "us")
     baby.ptp_a_ctrl.value = 0
-    await Timer(1, "ns")
+    await Timer(1, "us")
 
     _, _, data_1, _, _ = await baby.get_ptp_b_data(dut, serialise=False)
     assert data_1 == magic_value, f"data sent didn't match magic value - {hex(data_1)} != {hex(magic_value)}"
 
+
 @cocotb.test()
 async def test_ptp_narrow(dut):
     dut.ena.value = 1
+    dut.clk.value = 0
     baby = ManchesterBaby(dut)
-
-    await pulse_clock(dut, 2)
+    baby.baby_reset_n.value = 0
+    await Timer(1, "us")
 
     baby.ptp_reset_n.value = 1
-    baby.baby_reset_n.value = 0
     baby.serialise.value = 1
     baby.debug_ptp.value = 1
+    await Timer(1, "us")
 
     data_1, data_2, _, _, _ = await baby.get_ptp_b_data(dut, serialise=True)
     assert data_1 == 0xDEADBEEF, "did not get expected magic value"
     assert data_2 == 0xCAFEB0BA, "did not get expected magic value"
-    del data_1
-    del data_2
 
     # reset
     baby.ptp_reset_n.value = 0
-    await pulse_clock(dut, 2)
+    await Timer(1, "us")
     baby.ptp_reset_n.value = 1
-    await pulse_clock(dut, 2)
+    await Timer(1, "us")
 
     magic_value = 0xBAADF00D
     await baby.send_32b_ptp_a(dut, magic_value, serialise=True)
 
     # present data - need ptp_a counter to hit 5
     baby.ptp_a_ctrl.value = 1
-    await Timer(1, "ns")
+    await Timer(1, "us")
     baby.ptp_a_ctrl.value = 0
-    await Timer(1, "ns")
+    await Timer(1, "us")
 
     _, _, data_1, _, _ = await baby.get_ptp_b_data(dut, serialise=True)
     assert data_1 == magic_value, f"data sent didn't match magic value - {hex(data_1)} != {hex(magic_value)}"        
@@ -204,7 +204,7 @@ async def run_test_prog(dut):
         await baby.send_32b_ptp_a(dut, data_tx)
         await pulse_clock(dut)
         tick = update_tick_counter(tick)
-        await Timer(1, "ns")
+        await Timer(1, "us")
 
         rw_intent = baby.baby_ram_rw.value
 
@@ -213,9 +213,9 @@ async def run_test_prog(dut):
 
         # present data - need ptp_a counter to hit 5
         baby.ptp_a_ctrl.value = 1
-        await Timer(1, "ns")
+        await Timer(1, "us")
         baby.ptp_a_ctrl.value = 0
-        await Timer(1, "ns")
+        await Timer(1, "us")
         
 
         address, data_rx, pc, ir, acc = await baby.get_ptp_b_data(dut)
