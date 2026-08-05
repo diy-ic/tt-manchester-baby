@@ -44,17 +44,17 @@ class ManchesterBaby(DUT):
 
     async def _pulse_control_line(self) -> None:
         self.ptp_b_ctrl.value = 1
-        await Timer(1, "us")
+        await Timer(1, "ns")
         self.ptp_b_ctrl.value = 0
-        await Timer(1, "us")
+        await Timer(1, "ns")
 
     async def _pulse_clock(self, pulses=1) -> None:
         for i in range(pulses):
             # BUG: cannot write to clock via self.clk.value
             self.tt.clk(1)
-            await Timer(1, "us")
+            await Timer(1, "ns")
             self.tt.clk(0)
-            await Timer(1, "us")
+            await Timer(1, "ns")
 
 
     async def _read_32b(self) -> int:
@@ -91,22 +91,22 @@ class ManchesterBaby(DUT):
                 # NOTE: writing to self.data_in[0].value fails silently
                 self.data_in[0] = digit
 
-                await Timer(1, "us")
+                await Timer(1, "ns")
                 self.ptp_a_ctrl.value = 1
-                await Timer(1, "us")
+                await Timer(1, "ns")
                 self.ptp_a_ctrl.value = 0
-                await Timer(1, "us")
+                await Timer(1, "ns")
         else:
             byte_list = value.to_bytes(4)
 
             for byte in byte_list:
                 self.data_in.value = byte
 
-                await Timer(1, "us")
+                await Timer(1, "ns")
                 self.ptp_a_ctrl.value = 1
-                await Timer(1, "us")
+                await Timer(1, "ns")
                 self.ptp_a_ctrl.value = 0
-                await Timer(1, "us")
+                await Timer(1, "ns")
 
 
 # test parallel output feature
@@ -117,7 +117,7 @@ async def test_ptp_wide(dut: ManchesterBaby):
 
     # keep baby off during testing
     dut.rst_n.value = 0
-    await Timer(1, "us")
+    await Timer(1, "ns")
 
     # configure ptp_wide
     dut.ptp_reset_n.value = 1
@@ -132,18 +132,18 @@ async def test_ptp_wide(dut: ManchesterBaby):
 
     # reset
     dut.ptp_reset_n.value = 0
-    await Timer(1, "us")
+    await Timer(1, "ns")
     dut.ptp_reset_n.value = 1
-    await Timer(1, "us")
+    await Timer(1, "ns")
 
     magic_value = 0xBAADF00D
     await dut.send_32b_ptp_a(magic_value)
 
     # present data - need ptp_a counter to hit 5
     dut.ptp_a_ctrl.value = 1
-    await Timer(1, "us")
+    await Timer(1, "ns")
     dut.ptp_a_ctrl.value = 0
-    await Timer(1, "us")
+    await Timer(1, "ns")
 
     _, _, data_3, _, _ = await dut.get_ptp_b_data()
     assert data_3 == magic_value, f"data sent didn't match magic value - {hex(data_3)} != {hex(magic_value)}"
@@ -156,12 +156,12 @@ async def test_ptp_narrow(dut: ManchesterBaby):
 
     # keep baby off during testing
     dut.rst_n.value = 0
-    await Timer(1, "us")
+    await Timer(1, "ns")
 
     dut.ptp_reset_n.value = 1
     dut.serialise.value = 1
     dut.debug_ptp.value = 1
-    await Timer(1, "us")
+    await Timer(1, "ns")
 
     data_1, data_2, _, _, _ = await dut.get_ptp_b_data()
 
@@ -170,18 +170,18 @@ async def test_ptp_narrow(dut: ManchesterBaby):
 
     # reset
     dut.ptp_reset_n.value = 0
-    await Timer(1, "us")
+    await Timer(1, "ns")
     dut.ptp_reset_n.value = 1
-    await Timer(1, "us")
+    await Timer(1, "ns")
 
     magic_value = 0xBAADF00D
     await dut.send_32b_ptp_a(magic_value)
 
     # present data - need ptp_a counter to hit 5
     dut.ptp_a_ctrl.value = 1
-    await Timer(1, "us")
+    await Timer(1, "ns")
     dut.ptp_a_ctrl.value = 0
-    await Timer(1, "us")
+    await Timer(1, "ns")
 
     _, _, data_3, _, _ = await dut.get_ptp_b_data()
     assert data_3 == magic_value, f"data sent didn't match magic value - {hex(data_3)} != {hex(magic_value)}"
@@ -228,13 +228,13 @@ async def run_test_prog(dut: ManchesterBaby):
         tt.clk(1)
         plat.write_clock(1)
         assert tt.pins.rp_projclk.value() == 1, "clock not high"
-        await Timer(1, "us")
+        await Timer(1, "ns")
         plat.write_clock(0)
         tt.clk(0)
         assert tt.pins.rp_projclk.value() == 0, "clock not low"
 
         tick = update_tick(tick)
-        await Timer(1, "us")
+        await Timer(1, "ns")
 
         rw_intent = dut.baby_ram_rw.value
 
@@ -243,9 +243,9 @@ async def run_test_prog(dut: ManchesterBaby):
 
         # present data - need ptp_a counter to hit 5
         dut.ptp_a_ctrl.value = 1
-        await Timer(1, "us")
+        await Timer(1, "ns")
         dut.ptp_a_ctrl.value = 0
-        await Timer(1, "us")
+        await Timer(1, "ns")
 
 
         address, data_rx, pc, ir, acc = await dut.get_ptp_b_data()
