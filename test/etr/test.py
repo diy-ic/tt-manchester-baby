@@ -3,6 +3,7 @@ from microcotb.triggers import Timer
 
 from ttboard.demoboard import DemoBoard, RPMode
 from ttboard.cocotb.dut import DUT
+import ttboard.util.platform as plat
 
 cocotb.set_runner_scope(__name__)
 
@@ -30,11 +31,31 @@ class ManchesterBaby(DUT):
         # so here we are expecting two signals to be received by the demoboard from the project (marked as 0)
         self.uio_oe_pico.value = 0b00111111
 
+        self.program = [
+            0x00000013, 0x0000401f, 0x0000601f, 0x0000401f,
+            0x0000801e, 0x0000c000, 0x00000000, 0x0000401f,
+            0x0000601f, 0x0000401c, 0x0000801c, 0x0000601c,
+            0x0000401f, 0x0000801f, 0x0000601f, 0x0000401c,
+            0x0000601c, 0x0000c000, 0x0000001a, 0x0000e000,
+            0x0000601f, 0x0000401d, 0x0000801c, 0x0000801c,
+            0x0000601c, 0x0000001b, 0x00000002, 0x0000000b,
+            0x00000000, 0x20000000, 0x00000014, 0x00000024
+        ]
+
     async def _pulse_control_line(self) -> None:
         self.ptp_b_ctrl.value = 1
         await Timer(1, "us")
         self.ptp_b_ctrl.value = 0
         await Timer(1, "us")
+
+    async def _pulse_clock(self, pulses=1) -> None:
+        for i in range(pulses):
+            # BUG: cannot write to clock via self.clk.value
+            self.tt.clk(1)
+            await Timer(1, "us")
+            self.tt.clk(0)
+            await Timer(1, "us")
+
 
     async def _read_32b(self) -> int:
         rx_value = 0
@@ -64,7 +85,6 @@ class ManchesterBaby(DUT):
         return packet
 
     async def send_32b_ptp_a(self, value: int) -> None:
-
         if (self.serialise.value):
             for i in range(32):
                 digit = (value & (0x80000000 >> i)) >> 31-i
@@ -166,6 +186,82 @@ async def test_ptp_narrow(dut: ManchesterBaby):
     _, _, data_3, _, _ = await dut.get_ptp_b_data()
     assert data_3 == magic_value, f"data sent didn't match magic value - {hex(data_3)} != {hex(magic_value)}"
 
+@cocotb.test()
+async def run_test_prog(dut: ManchesterBaby):
+
+    READ = 0
+    WRITE = 1
+
+    tick = 0
+    def update_tick(current_tick):
+        return (current_tick + 1) % 8
+
+    dut.ena.value = 1
+
+    # reset
+    dut.ptp_reset_n.value = 0
+    dut.ptp_a_ctrl.value = 0
+    dut.ptp_b_ctrl.value = 0
+    dut.debug_ptp.value = 0
+    dut.rst_n.value = 0
+    dut.data_in.value = 0
+    dut.serialise.value = 0
+    await dut._pulse_clock(2)
+
+    # exit reset
+    dut.ptp_reset_n.value = 1
+    dut.rst_n.value = 1
+
+    # initial state
+    address = 0
+    data_tx = dut.program[address]
+
+    tt = DemoBoard.get()
+
+    while True:
+        await dut.send_32b_ptp_a(data_tx)
+
+        # HACK: setting dut.clk.value has no effect at all, tt.clk(N) has no effect by itself, and neither does plat.write_clock(1)
+        # but if you combine both tt.clk(1) and plat.write_clock(1)... they work???????
+
+        # await dut._pulse_clock()
+        tt.clk(1)
+        plat.write_clock(1)
+        assert tt.pins.rp_projclk.value() == 1, "clock not high"
+        await Timer(1, "us")
+        plat.write_clock(0)
+        tt.clk(0)
+        assert tt.pins.rp_projclk.value() == 0, "clock not low"
+
+        tick = update_tick(tick)
+        await Timer(1, "us")
+
+        rw_intent = dut.baby_ram_rw.value
+
+        if dut.baby_stop_lamp == 1:
+            break
+
+        # present data - need ptp_a counter to hit 5
+        dut.ptp_a_ctrl.value = 1
+        await Timer(1, "us")
+        dut.ptp_a_ctrl.value = 0
+        await Timer(1, "us")
+
+
+        address, data_rx, pc, ir, acc = await dut.get_ptp_b_data()
+
+        if tick == 0:
+            dut._log.info(f"PC: {hex(pc)}, IR: {hex(ir)}, ACC: {hex(acc)}")
+
+        if rw_intent == READ:
+            data_tx = dut.program[address]
+        elif rw_intent == WRITE:
+            dut.program[address] = data_rx
+
+    assert dut.baby_stop_lamp.value == 1, "stop lamp was not high, but broke out of the loop?"
+    assert dut.program[-4] == 0xe0000000, f"baby stopped but answer was not as expected (got {hex(dut.program[-4])})"
+
+
 def main():
     tt = DemoBoard.get()
 
@@ -175,10 +271,7 @@ def main():
 
     tt.shuttle.tt_um_krisjdev_manchester_baby.enable()
 
-    # control I/O
-    if tt.mode != RPMode.ASIC_RP_CONTROL:
-        print("setting mode to ASIC_RP_CONTROL")
-        tt.mode = RPMode.ASIC_RP_CONTROL
+    tt.mode = RPMode.ASIC_RP_CONTROL
 
     dut = ManchesterBaby()
     dut._log.info("enabled project, beginning tests")
