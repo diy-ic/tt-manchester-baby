@@ -50,9 +50,11 @@ class ManchesterBaby(DUT):
 
     async def _pulse_clock(self, pulses=1) -> None:
         for i in range(pulses):
-            # BUG: cannot write to clock via self.clk.value
+            # HACK: need to combine tt.clk() with plat.write_clock() for clock to work
             self.tt.clk(1)
+            plat.write_clock(1)
             await Timer(1, "ns")
+            plat.write_clock(0)
             self.tt.clk(0)
             await Timer(1, "ns")
 
@@ -220,18 +222,7 @@ async def run_test_prog(dut: ManchesterBaby):
 
     while True:
         await dut.send_32b_ptp_a(data_tx)
-
-        # HACK: setting dut.clk.value has no effect at all, tt.clk(N) has no effect by itself, and neither does plat.write_clock(1)
-        # but if you combine both tt.clk(1) and plat.write_clock(1)... they work???????
-
-        # await dut._pulse_clock()
-        tt.clk(1)
-        plat.write_clock(1)
-        assert tt.pins.rp_projclk.value() == 1, "clock not high"
-        await Timer(1, "ns")
-        plat.write_clock(0)
-        tt.clk(0)
-        assert tt.pins.rp_projclk.value() == 0, "clock not low"
+        await dut._pulse_clock()
 
         tick = update_tick(tick)
         await Timer(1, "ns")
