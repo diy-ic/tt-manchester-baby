@@ -9,4 +9,11 @@ to edit files directly onboard:
 
 `rshell -e nano`
 
-`edit /pyboard/config.ini`
+`edit /config.ini` -- don't edit `/pyboard/config.ini` (not sure if it's the correct file)
+
+---
+
+changes to config.ini:
+- set default project to `tt_um_krisjdev_manchester_baby`
+- added `clock_frequency = 0`
+- aded own section for `tt_um_krisjdev_manchester_baby`
