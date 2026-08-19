@@ -12,6 +12,7 @@ def main():
 
     tt.shuttle.tt_um_krisjdev_manchester_baby.enable()
     tt.mode = RPMode.ASIC_RP_CONTROL
+    tt.clock_project_stop()
 
     baby = ManchesterBaby()
 
