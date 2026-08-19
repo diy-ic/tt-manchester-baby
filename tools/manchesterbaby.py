@@ -1,7 +1,4 @@
-from time import sleep_us
 from sys import stdin
-
-import ttboard.util.platform as plat
 
 from ttboard.demoboard import DemoBoard
 
@@ -101,11 +98,7 @@ class ManchesterBaby():
 
     def _pulse_clock(self, pulses=1) -> None:
         for i in range(pulses):
-            # HACK: need to combine tt.clk() with plat.write_clock() for clock to work
-            self.tt.clk(1)
-            plat.write_clock(1)
-            plat.write_clock(0)
-            self.tt.clk(0)
+            self.tt.clock_project_once()
 
     def _read_32b(self) -> int:
         rx_value = 0
