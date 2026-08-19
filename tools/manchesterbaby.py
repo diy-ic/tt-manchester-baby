@@ -1,15 +1,24 @@
 from time import sleep_us
+from sys import stdin
 
 import ttboard.util.platform as plat
 
 from ttboard.demoboard import DemoBoard
 
 
+GLYPHS = [
+    "· · · ·", "■ · · ·", "· ■ · ·", "■ ■ · ·",     # 0000, 0001, 0010, 0011
+    "· · ■ ·", "■ · ■ ·", "· ■ ■ ·", "■ ■ ■ ·",     # 0100, 0101, 0110, 0111
+    "· · · ■", "■ · · ■", "· ■ · ■", "■ ■ · ■",     # 1000, 1001, 1010, 1011
+    "· · ■ ■", "■ · ■ ■", "· ■ ■ ■", "■ ■ ■ ■",     # 1100, 1101, 1110, 1111
+]
+
 class ManchesterBaby():
     def __init__(self):
         tt = DemoBoard.get()
         self.tt = tt
         tt.uio_oe_pico.value = 0b00111111
+        self.program = None
 
     # getters/setters for each pin
     # TODO: better way to do this?
@@ -143,9 +152,81 @@ class ManchesterBaby():
                 self.ptp_a_ctrl = 1
                 self.ptp_a_ctrl = 0
 
+    def draw_crt(self):
+
+        for i in range(len(self.program)):
+            print(f"0x{i:0{2}x} | ", end="")
+
+            # set colour to green
+            print("\033[32m", end="")
+
+            for j in range(8):
+                glyph_index = (self.program[i] & (0xF << (j*4))) >> j * 4
+                print(f"{GLYPHS[glyph_index]} ", end="")
+
+            print("\033[0m", end="")
+            print(f"| 0x{self.program[i]:0{8}x}")
+
+        print("")
+        print("PC   | ")
+        print("IR   | ")
+        print("ACC  | ")
+
+    def get_cursor_position(self):
+        print("\033[6n", end="")
+
+        xpos_str = []
+        ypos_str = []
+        write_xpos = True
+        pos_index = 0
+
+        while True:
+            read_byte = stdin.read(1)
+
+            if read_byte == "\033" or read_byte == "[": continue
+            if read_byte == "R": break
+
+            if read_byte == ";":
+                write_xpos = False
+                pos_index = 0
+                continue
+
+            if write_xpos:
+                xpos_str.append(read_byte)
+            else:
+                ypos_str.append(read_byte)
+
+            pos_index += 1
+
+        xpos = "".join(xpos_str)
+        ypos = "".join(ypos_str)
+
+        return [xpos, ypos]
+
+    def update_crt_line(self, pos, value):
+        cursor_xy = self.get_cursor_position()
+
+        # move cursor to start of crt line for given address
+        print(f"\033[{pos};8H", end="")
+        print(f"\033[32m", end="")
+
+        for i in range(8):
+            glyph_index = (value & 0xF << (i*4)) >> i * 4
+            print(f"{GLYPHS[glyph_index]} ", end="")
+
+        print(f"\033[0m", end="")
+        print(f"| 0x{value:0{8}x}")
+        print(f"\033[{cursor_xy[0]};{cursor_xy[1]}H", end="")
+
     def execute(self, program: list[int]):
         READ = 0
         WRITE = 1
+
+        CRT_PC_POS = 34
+        CRT_IR_POS = 35
+        CRT_ACC_POS = 36
+
+        self.program = program
 
         tick = 0
         def update_tick(current_tick):
@@ -165,13 +246,23 @@ class ManchesterBaby():
         self.rst_n = 1
 
         address = 0
-        data_tx = program[address]
+        data_tx = self.program[address]
+
+        # hide cursor
+        print("\033[?25l", end="")
+
+        # clear terminal
+        print("\033[1;1H\033[2J", end="")
+        self.draw_crt()
+        self.update_crt_line(CRT_PC_POS, 0)
+        self.update_crt_line(CRT_IR_POS, 0)
+        self.update_crt_line(CRT_ACC_POS, 0)
 
         while True:
+            print("\033[38;1H", end="") # move cursor to bottom of crt
+
             self.send_32b_ptp_a(data_tx)
             self._pulse_clock(1)
-
-            tick = update_tick(tick)
 
             rw_intent = self.baby_ram_rw
 
@@ -183,13 +274,19 @@ class ManchesterBaby():
 
             address, data_rx, pc, ir, acc = self.get_ptp_b_data()
 
-            if tick == 0:
-                print(f"PC: {hex(pc)}, IR: {hex(ir)}, ACC: {hex(acc)}")
+            print(f"\ntick: {tick % 8} (total: {tick})")
+            self.update_crt_line(CRT_PC_POS, pc)
+            self.update_crt_line(CRT_IR_POS, ir)
+            self.update_crt_line(CRT_ACC_POS, acc)
+            tick += 1
 
             if rw_intent == READ:
-                data_tx = program[address]
+                data_tx = self.program[address]
             elif rw_intent == WRITE:
-                program[address] = data_rx
+                self.program[address] = data_rx
+                self.update_crt_line(address, data_rx)
 
-        print(f"stop lamp: {self.baby_stop_lamp}")
-        print(hex(program[-4]))
+        # reveal cursor
+        print(f"\033[?25h", end="")
+
+        print(f"\n\nstop lamp: {self.baby_stop_lamp}")
