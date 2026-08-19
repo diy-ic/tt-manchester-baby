@@ -260,6 +260,13 @@ class ManchesterBaby():
             rw_intent = self.baby_ram_rw
 
             if self.baby_stop_lamp == 1:
+                # HACK?: somehow the display gets out of sync when running
+                # so force update it when the program is done
+                print("\033[1;1H\033[2J", end="")
+                self.draw_crt()
+                self.update_crt_line(CRT_PC_POS, pc)
+                self.update_crt_line(CRT_IR_POS, ir)
+                self.update_crt_line(CRT_ACC_POS, acc)
                 break
 
             self.ptp_a_ctrl = 1
@@ -281,5 +288,5 @@ class ManchesterBaby():
 
         # reveal cursor
         print(f"\033[?25h", end="")
-
-        print(f"\n\nstop lamp: {self.baby_stop_lamp}")
+        print(f"\ntick: {tick % 8} (total: {tick})")
+        print(f"stop lamp: {self.baby_stop_lamp}")
