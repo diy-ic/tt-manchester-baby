@@ -1,0 +1,17 @@
+TURING_LONG_DIVISTION = [
+    0x00000013, 0x0000401f, 0x0000601f, 0x0000401f,
+    0x0000801e, 0x0000c000, 0x00000000, 0x0000401f,
+    0x0000601f, 0x0000401c, 0x0000801c, 0x0000601c,
+    0x0000401f, 0x0000801f, 0x0000601f, 0x0000401c,
+    0x0000601c, 0x0000c000, 0x0000001a, 0x0000e000,
+    0x0000601f, 0x0000401d, 0x0000801c, 0x0000801c,
+    0x0000601c, 0x0000001b, 0x00000002, 0x0000000b,
+    0x00000000, 0x20000000, 0x00000014, 0x00000024
+]
+
+def get(program: str) -> list[int]:
+
+    if program == "turing_long_division":
+        return TURING_LONG_DIVISTION
+    else:
+        raise ValueError(f"unknown program: {program}")
