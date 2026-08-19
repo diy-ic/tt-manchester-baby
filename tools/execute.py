@@ -16,7 +16,7 @@ def main():
 
     baby = ManchesterBaby()
 
-    baby.execute(programs.get("sample"))
+    baby.execute(programs.get("turing_long_division"))
 
 
 if __name__ == "__main__":

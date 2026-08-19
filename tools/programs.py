@@ -1,4 +1,4 @@
-SAMPLE_PROGRAM = [
+TURING_LONG_DIVISTION = [
     0x00000013, 0x0000401f, 0x0000601f, 0x0000401f,
     0x0000801e, 0x0000c000, 0x00000000, 0x0000401f,
     0x0000601f, 0x0000401c, 0x0000801c, 0x0000601c,
@@ -11,7 +11,7 @@ SAMPLE_PROGRAM = [
 
 def get(program: str) -> list[int]:
 
-    if program == "sample":
-        return SAMPLE_PROGRAM
+    if program == "turing_long_division":
+        return TURING_LONG_DIVISTION
     else:
         raise ValueError(f"unknown program: {program}")
